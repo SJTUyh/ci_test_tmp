@@ -27,7 +27,44 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         with:
           script: |
-            const fetch = require('node-fetch');
+            const https = require('https');
+
+            // 辅助函数：发起 HTTPS POST 请求
+            function postHttpsRequest(url, data) {
+              return new Promise((resolve, reject) => {
+                const urlObj = new URL(url);
+                const options = {
+                  hostname: urlObj.hostname,
+                  path: urlObj.pathname + urlObj.search,
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  }
+                };
+
+                const req = https.request(options, (res) => {
+                  let body = '';
+                  res.on('data', (chunk) => {
+                    body += chunk;
+                  });
+                  res.on('end', () => {
+                    try {
+                      const result = JSON.parse(body);
+                      resolve({ ok: res.statusCode === 200, status: res.statusCode, statusText: res.statusMessage, data: result });
+                    } catch (error) {
+                      reject(error);
+                    }
+                  });
+                });
+
+                req.on('error', (error) => {
+                  reject(error);
+                });
+
+                req.write(JSON.stringify(data));
+                req.end();
+              });
+            }
 
             // 获取必要的上下文信息
             let issueNumber;
@@ -66,32 +103,30 @@ jobs:
 
               // 调用Gemini API
               const geminiApiKey = process.env.GEMINI_API_KEY;
-              const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  contents: [
-                    {
-                      parts: [
-                        {
-                          text: `你是该GitHub仓库的AI助手，基于以下历史Issue上下文和官方文档参考，简洁、准确地回复问题（仅用中文，避免冗余）：\n\n【官方文档参考】\nhttps://ais-bench-benchmark-rf.readthedocs.io/ \n\n【历史Issue上下文】\n${issueContext}\n\n【待回复的问题】\n${questionToAnswer}\n\n【回复要求】\n1. 只回答和仓库相关的问题，无关问题请提示“该问题与仓库无关，建议补充相关信息”；\n2. 上下文无相关信息时，提示“暂未找到相关解答，可参考仓库官方文档（https://ais-bench-benchmark-rf.readthedocs.io/）、README或联系维护者”；\n3. 回复控制在500字以内，语气友好。`
-                        }
-                      ]
-                    }
-                  ],
-                  generationConfig: {
-                    temperature: 0.3,
-                    maxOutputTokens: 500
+              const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
+              const apiData = {
+                contents: [
+                  {
+                    parts: [
+                      {
+                        text: `你是该GitHub仓库的AI助手，基于以下历史Issue上下文和官方文档参考，简洁、准确地回复问题（仅用中文，避免冗余）：\n\n【官方文档参考】\nhttps://ais-bench-benchmark-rf.readthedocs.io/ \n\n【历史Issue上下文】\n${issueContext}\n\n【待回复的问题】\n${questionToAnswer}\n\n【回复要求】\n1. 只回答和仓库相关的问题，无关问题请提示“该问题与仓库无关，建议补充相关信息”；\n2. 上下文无相关信息时，提示“暂未找到相关解答，可参考仓库官方文档（https://ais-bench-benchmark-rf.readthedocs.io/）、README或联系维护者”；\n3. 回复控制在500字以内，语气友好。`
+                      }
+                    ]
                   }
-                })
-              });
+                ],
+                generationConfig: {
+                  temperature: 0.3,
+                  maxOutputTokens: 500
+                }
+              };
+
+              const response = await postHttpsRequest(apiUrl, apiData);
 
               if (!response.ok) {
                 throw new Error(`API调用失败: ${response.status} ${response.statusText}`);
               }
 
-              const data = await response.json();
-              const aiReply = data.candidates[0].content.parts[0].text.trim();
+              const aiReply = response.data.candidates[0].content.parts[0].text.trim();
 
               // 发布AI回复到Issue
               await github.rest.issues.createComment({

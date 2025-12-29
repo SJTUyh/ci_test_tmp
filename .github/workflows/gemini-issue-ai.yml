@@ -34,7 +34,7 @@ jobs:
             const historicalIssues = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues`;
 
             // 生成提示词
-            const prompt = `你现在需要解决一个关于 AISBench/benchmark 仓库的issue，请基于以下信息分析并提供解决方案：\n\n【当前问题】\nIssue 链接：${issueLink}\n标题：${issueTitle}\n\n【历史相关Issue参考】\n${historicalIssues}\n\n【官方文档】\n${docLink}\n\n请结合以上所有信息，提供完整的解决方案或建议。`;
+            const prompt = `你现在需要解决一个关于 AISBench/benchmark 仓库的issue，请参考历史相关Issue和官方文档，并提供此issue的解决方案：\n\n【当前issue】\nIssue 链接：${issueLink}\n标题：${issueTitle}\n\n【历史相关Issue参考】\n${historicalIssues}\n\n【官方文档】\n${docLink}\n\n请结合以上所有信息，提供完整的解决方案或建议。`;
 
             // 生成AI助手链接列表
             const aiAgents = `\n\n常用AI助手链接：\n- 豆包：https://www.doubao.com/\n- ChatGPT：https://chat.openai.com/\n- 文心一言：https://yiyan.baidu.com/\n- 通义千问：https://tongyi.aliyun.com/`;
@@ -45,5 +45,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issueNumber,
-              body: `🤖 为了更好地帮助你解决问题，我们为你准备了 AI 提问提示词。你可以复制以下内容到任意 AI 助手中（如豆包、ChatGPT 等）获取专业解答：\n\n\`\`\`\n${prompt}\n\`\`\`${aiAgents}\n\`\`\`${furtherHelp}`
+              body: `🤖 为了更好地帮助你解决问题，我们为你准备了 AI 提问提示词。你可以复制以下内容到任意 AI 助手中（如豆包、ChatGPT 等）获取专业解答：\n\n\`\`\`\n${prompt}\n\`\`\`${aiAgents}${furtherHelp}`
             });

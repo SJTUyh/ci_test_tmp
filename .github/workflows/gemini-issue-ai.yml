@@ -186,6 +186,6 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issueNumber,
-                body: "🤖 抱歉，暂时无法生成回复～可参考仓库官方文档（https://ais-bench-benchmark-rf.readthedocs.io/）或历史Issue，或稍后重试。"
+                body: "🤖 抱歉，暂时无法生成回复～\n可在工具官方文档：https://ais-bench-benchmark-rf.readthedocs.io/ 中搜索，\n或者搜索历史相似Issue，\n或稍后在评论区@issue_bot_cn重新寻求AI答复。"
               });
             }

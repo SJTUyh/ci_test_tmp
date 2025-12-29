@@ -11,7 +11,7 @@ jobs:
   gemini-ai-reply:
     runs-on: ubuntu-latest
     permissions:
-      issues: write  # 评论Issue权限
+      issues: write  # 评论Issue和读取Issue权限
       contents: read # 读取仓库内容权限
     # 仅满足以下条件时执行：评论含@issue_bot_cn 或 新建Issue（可选）
     if: |
@@ -42,22 +42,30 @@ jobs:
                   }
                 };
 
+                console.log('发起请求到:', urlObj.hostname + urlObj.pathname);
+                console.log('请求数据:', JSON.stringify(data).substring(0, 200) + '...');
+
                 const req = https.request(options, (res) => {
+                  console.log('响应状态码:', res.statusCode);
+                  console.log('响应头:', res.headers);
                   let body = '';
                   res.on('data', (chunk) => {
                     body += chunk;
                   });
                   res.on('end', () => {
+                    console.log('响应内容:', body);
                     try {
                       const result = JSON.parse(body);
-                      resolve({ ok: res.statusCode === 200, status: res.statusCode, statusText: res.statusMessage, data: result });
+                      resolve({ ok: res.statusCode === 200, status: res.statusCode, statusText: res.statusMessage, data: result, fullBody: body });
                     } catch (error) {
-                      reject(error);
+                      console.log('解析响应失败:', error);
+                      resolve({ ok: res.statusCode === 200, status: res.statusCode, statusText: res.statusMessage, data: null, fullBody: body });
                     }
                   });
                 });
 
                 req.on('error', (error) => {
+                  console.error('请求错误:', error);
                   reject(error);
                 });
 
@@ -89,12 +97,14 @@ jobs:
 
             try {
               // 获取历史Issue作为上下文（最近30条已关闭的Issue）
+              console.log('开始获取历史Issue...');
               const issues = await github.rest.issues.listForRepo({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 state: 'closed',
                 per_page: 30
               });
+              console.log('获取到历史Issue数量:', issues.data.length);
 
               // 精简上下文，保留标题+核心内容（避免超长）
               const issueContext = issues.data.map(issue =>
@@ -102,6 +112,7 @@ jobs:
               ).join('\n\n');
 
               // 调用Gemini API
+              console.log('开始调用Gemini API...');
               const geminiApiKey = process.env.GEMINI_API_KEY;
               const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
               const apiData = {
@@ -126,15 +137,18 @@ jobs:
                 throw new Error(`API调用失败: ${response.status} ${response.statusText}`);
               }
 
+              console.log('Gemini API调用成功');
               const aiReply = response.data.candidates[0].content.parts[0].text.trim();
 
               // 发布AI回复到Issue
+              console.log('开始发布评论到Issue...');
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issueNumber,
                 body: `🤖 Gemini AI 回复：\n\n${aiReply}`
               });
+              console.log('评论发布成功');
             } catch (error) {
               console.error('处理失败:', error);
               // 兜底回复（API调用失败时）

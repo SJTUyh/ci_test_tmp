@@ -44,15 +44,15 @@ jobs:
         with:
           script: |
             // 获取当前Issue信息
-            const issueNumber = ${{ github.event_name == 'issue_comment' ? github.event.issue.number : github.event.issue.number }};
-            const issueTitle = ${{ github.event_name == 'issue_comment' ? `github.event.issue.title` : `github.event.issue.title` }};
-            const issueBody = ${{ github.event_name == 'issue_comment' ? `github.event.issue.body` : `github.event.issue.body` }};
+            const issueNumber = context.issue.number;
+            const issueTitle = context.payload.issue.title;
+            const issueBody = context.payload.issue.body;
             const issueLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${issueNumber}`;
             const docLink = 'https://ais-bench-benchmark-rf.readthedocs.io/';
             const historicalIssues = `${{ steps.get_issues.outputs.issue_links }}`;
 
             // 生成提示词
-            const prompt = `你现在需要解决一个关于 AISBench/benchmark 仓库的issue，请基于以下信息分析并提供解决方案：\n\n【当前问题】\nIssue 链接：${issueLink}\n标题：${github.event.issue.title}\n内容：${github.event.issue.body ? github.event.issue.body.substring(0, 1000) : '无'}\n\n【历史相关Issue参考】\n${historicalIssues}\n\n【官方文档】\n${docLink}\n\n请结合以上所有信息，提供完整的解决方案或建议。`;
+            const prompt = `你现在需要解决一个关于 AISBench/benchmark 仓库的issue，请基于以下信息分析并提供解决方案：\n\n【当前问题】\nIssue 链接：${issueLink}\n标题：${issueTitle}\n内容：${issueBody ? issueBody.substring(0, 1000) : '无'}\n\n【历史相关Issue参考】\n${historicalIssues}\n\n【官方文档】\n${docLink}\n\n请结合以上所有信息，提供完整的解决方案或建议。`;
 
             // 生成AI助手链接列表
             const aiAgents = `\n\n常用AI助手链接：\n- 豆包：https://www.doubao.com/\n- ChatGPT：https://chat.openai.com/\n- 文心一言：https://yiyan.baidu.com/\n- 通义千问：https://tongyi.aliyun.com/`;

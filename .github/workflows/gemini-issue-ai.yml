@@ -127,7 +127,14 @@ jobs:
                         ]
                       }
                     ],
-                    "tools": [{"name": "google_search"},{"name": "url_context"}],
+                    "tool_config": {
+                      "google_search_retrieval": {
+                        "enabled": true
+                      },
+                      "url_context": {
+                        "enabled": true
+                      }
+                    },
                     generationConfig: {
                       temperature: 0.3,
                       maxOutputTokens: 1000

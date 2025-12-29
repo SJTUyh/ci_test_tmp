@@ -102,10 +102,7 @@ jobs:
 
               // 首先尝试最新的免费模型列表
               const availableModels = [
-                'gemini-2.5-flash',
-                'gemini-1.5-flash',
-                'gemini-pro',
-                'gemini-1.0-pro'
+                'gemini-1.5-flash-latest',
               ];
 
               let aiReply = null;
@@ -114,7 +111,7 @@ jobs:
 
               for (const modelName of availableModels) {
                 try {
-                  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiApiKey}`;
+                  const apiUrl = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${geminiApiKey}`;
                   console.log(`尝试使用模型: ${modelName}`);
 
                   const apiData = {
@@ -127,14 +124,7 @@ jobs:
                         ]
                       }
                     ],
-                    "tool_config": {
-                      "google_search_retrieval": {
-                        "enabled": true
-                      },
-                      "url_context": {
-                        "enabled": true
-                      }
-                    },
+                    "tools": [{"name": "google_search"}, {"name": "url_context"}],
                     generationConfig: {
                       temperature: 0.3,
                       maxOutputTokens: 1000

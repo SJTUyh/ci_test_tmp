@@ -1,7 +1,8 @@
 import os
 import json
-import google.generativeai as genai
+import google.genai as genai
 from github import Github
+from github import Auth
 from dotenv import load_dotenv
 import re
 
@@ -12,7 +13,8 @@ load_dotenv()
 genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
 
 # Initialize GitHub client
-github = Github(os.getenv('GITHUB_TOKEN'))
+auth = Auth.Token(os.getenv('GITHUB_TOKEN'))
+github = Github(auth=auth)
 
 # Load GitHub event data
 event_path = os.getenv('GITHUB_EVENT_PATH')
@@ -134,7 +136,8 @@ Please respond in {language} and ensure your response is clear and helpful.
 
 # Call Gemini API
 try:
-    model = genai.GenerativeModel('gemini-pro')
+    # Use the new genai package with correct model name
+    model = genai.GenerativeModel('gemini-2.5-flash')
     response = model.generate_content(prompt)
     comment_body = response.text
 

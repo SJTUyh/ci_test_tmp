@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import google.generativeai as genai
 from github import Github
 from github import Auth
@@ -150,19 +151,59 @@ try:
     model = genai.GenerativeModel('gemini-2.5-flash')
 
     # Generate content using the model
-    response = model.generate_content(
-        contents=prompt,
-        generation_config={
-            'temperature': 0.3,
-            'top_p': 1.0,
-            'top_k': 1,
-            'max_output_tokens': 1024
-        }
-    )
-    if language == "zh":
-        comment_body = "🤖 基于AI机器人的issue内容内容完整性检查结果:\n\n" + response.text + "\n👉 如果想重新检查，在评论区@issue_checker即可。"
+    # Implement retry mechanism
+    max_retries = 3
+    retry_delay = 1  # Initial delay in seconds
+    retry_count = 0
+    response = None
+
+    # Network-related error patterns to retry on
+    network_error_patterns = [
+        "network", "timeout", "connection", "connect", "refused", "reset",
+        "closed", "unreachable", "error 429", "error 500", "error 502",
+        "error 503", "error 504", "server error"
+    ]
+
+    while retry_count < max_retries:
+        try:
+            response = model.generate_content(
+                contents=prompt,
+                generation_config={
+                    'temperature': 0.3,
+                    'top_p': 1.0,
+                    'top_k': 1,
+                    'max_output_tokens': 1024
+                }
+            )
+            break  # Success, exit the loop
+        except Exception as e:
+            error_msg = str(e).lower()
+
+            # Check if the error is network-related
+            is_network_error = any(pattern in error_msg for pattern in network_error_patterns)
+
+            if not is_network_error:
+                raise  # Re-raise non-network errors immediately
+
+            retry_count += 1
+            if retry_count >= max_retries:
+                raise  # Re-raise if max retries exceeded
+
+            # Exponential backoff
+            delay = retry_delay * (2 ** (retry_count - 1))
+            print(f"Network error occurred. Retrying in {delay} seconds... (Attempt {retry_count}/{max_retries})")
+            time.sleep(delay)
+    if response is not None and hasattr(response, 'text'):
+        if language == "zh":
+            comment_body = "🤖 基于AI机器人的issue内容完整性检查结果:\n\n" + response.text + "\n👉 如果想重新检查，在评论区@issue_checker即可。"
+        else:
+            comment_body = "🤖 issue content check result from AI robot:\n\n" + response.text + "\n👉 If you want to re-check, please comment @issue_checker."
     else:
-        comment_body = "🤖 issue content check result from AI robot:\n\n" + response.text + "\n👉 If you want to re-check, please comment @issue_checker."
+        # Fallback message if API response is invalid
+        if language == "zh":
+            comment_body = "🤖 基于AI机器人的issue内容完整性检查结果:\n\n❌ 检查过程中发生错误，无法完成检查。请稍后重试或联系仓库管理员。\n👉 如果想重新检查，在评论区@issue_checker即可。"
+        else:
+            comment_body = "🤖 issue content check result from AI robot:\n\n❌ An error occurred during the check. Please try again later or contact the repository administrator.\n👉 If you want to re-check, please comment @issue_checker."
 
     # Post comment to GitHub issue
     repo = github.get_repo(repo_full_name)

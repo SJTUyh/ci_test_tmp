@@ -236,7 +236,8 @@ try:
         print(f"AI Response Text: {response.text}")
         # Patterns to match both Chinese and English status formats
         status_patterns = [
-            r'\[\s*(PASS|FAIL)\s*\]'  # Match PASS or FAIL in square brackets with optional whitespace
+            r'\b(PASS|FAIL)\b',  # Match PASS or FAIL as whole words
+            r'\[\s*(PASS|FAIL)\s*\]'  # Also match with optional brackets
         ]
 
         for pattern in status_patterns:

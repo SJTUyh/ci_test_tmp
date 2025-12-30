@@ -16,10 +16,20 @@ jobs:
           script: |
             // 获取 Issue 信息和标签列表
             const issue = context.payload.issue;
+            const issueTitle = issue.title;
             const labels = issue.labels.map(label => label.name.toLowerCase());
             const issueNumber = issue.number;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
+
+            // 检测标题是否包含中文字符
+            const hasChinese = /[\u4e00-\u9fa5]/.test(issueTitle);
+
+            // 如果标题不包含中文字符，跳过自动回复
+            if (!hasChinese) {
+              console.log(`Issue #${issueNumber} 标题不包含中文字符，跳过自动回复`);
+              return;
+            }
 
             // 定义不同标签对应的回复内容
             const replyMap = {

@@ -213,19 +213,17 @@ try:
             print(f"Network error occurred. Retrying in {delay} seconds... (Attempt {retry_count}/{max_retries})")
             time.sleep(delay)
 
-    # Check if comment_body is already set (e.g., in token limit error case)
-    if 'comment_body' not in locals():
-        if response is not None and hasattr(response, 'text'):
-            if language == "zh":
-                comment_body = "🤖 基于AI机器人的issue内容完整性检查结果:\n\n" + response.text + "\n\n👉 如果想重新检查，在评论区@issue_checker即可。"
-            else:
-                comment_body = "🤖 issue content check result from AI robot:\n\n" + response.text + "\n\n👉 If you want to re-check, please comment @issue_checker."
+    if response is not None and hasattr(response, 'text'):
+        if language == "zh":
+            comment_body = "🤖 基于AI机器人的issue内容完整性检查结果:\n\n" + response.text + "\n\n👉 如果想重新检查，在评论区@issue_checker即可。"
         else:
-            # Fallback message if API response is invalid
-            if language == "zh":
-                comment_body = "🤖 基于AI机器人的issue内容完整性检查结果:\n\n❌ 检查过程中发生错误，无法完成检查。请稍后重试或联系仓库管理员。\n\n👉 如果想重新检查，在评论区@issue_checker即可。"
-            else:
-                comment_body = "🤖 issue content check result from AI robot:\n\n❌ An error occurred during the check. Please try again later or contact the repository administrator.\n\n👉 If you want to re-check, please comment @issue_checker."
+            comment_body = "🤖 issue content check result from AI robot:\n\n" + response.text + "\n\n👉 If you want to re-check, please comment @issue_checker."
+    else:
+        # Fallback message if API response is invalid
+        if language == "zh":
+            comment_body = "🤖 基于AI机器人的issue内容完整性检查结果:\n\n❌ 检查过程中发生错误，无法完成检查。请稍后重试或联系仓库管理员。\n\n👉 如果想重新检查，在评论区@issue_checker即可。"
+        else:
+            comment_body = "🤖 issue content check result from AI robot:\n\n❌ An error occurred during the check. Please try again later or contact the repository administrator.\n\n👉 If you want to re-check, please comment @issue_checker."
 
     # Post comment to GitHub issue
     repo = github.get_repo(repo_full_name)
@@ -256,45 +254,6 @@ try:
         fail_label = 'content_check_failed'
 
         # Remove conflicting label if exists
-        if check_status == 'PASS' and fail_label in current_labels:
-            issue.remove_from_labels(fail_label)
-        elif check_status == 'FAIL' and pass_label in current_labels:
-            issue.remove_from_labels(pass_label)
-
-        # Add the appropriate label
-        if check_status == 'PASS' and pass_label not in current_labels:
-            issue.add_to_labels(pass_label)
-        elif check_status == 'FAIL' and fail_label not in current_labels:
-            issue.add_to_labels(fail_label)
-
-    # Extract check status from AI response
-    check_status = None
-
-    # Only extract status if we have a valid response from the AI model (not in token limit or fallback cases)
-    if 'comment_body' in locals() and response is not None and hasattr(response, 'text'):
-        # Look for check status using regex patterns for both Chinese and English
-        status_patterns = [
-            r'### 检查状态\s*\[([A-Z]+)\]',  # Chinese format: ### 检查状态 [PASS/FAIL]
-            r'### Check Status\s*\[([A-Z]+)\]',  # English format: ### Check Status [PASS/FAIL]
-            r'### 检查状态\s*([A-Z]+)',  # Alternative Chinese format without brackets
-            r'### Check Status\s*([A-Z]+)'  # Alternative English format without brackets
-        ]
-
-        for pattern in status_patterns:
-            match = re.search(pattern, response.text, re.IGNORECASE)
-            if match:
-                check_status = match.group(1).upper()
-                break
-
-    # Manage issue labels based on check status
-    if check_status in ['PASS', 'FAIL']:
-        current_labels = [label.name for label in issue.labels]
-
-        # Define the labels to use
-        pass_label = 'content_check_passed'
-        fail_label = 'content_check_failed'
-
-        # Remove conflicting labels if they exist
         if check_status == 'PASS' and fail_label in current_labels:
             issue.remove_from_labels(fail_label)
         elif check_status == 'FAIL' and pass_label in current_labels:

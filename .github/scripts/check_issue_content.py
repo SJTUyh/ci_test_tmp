@@ -232,14 +232,17 @@ try:
 
     # Extract check status from AI response
     if response is not None and hasattr(response, 'text'):
+        # Print response text for debugging
+        print(f"AI Response Text: {response.text}")
         # Patterns to match both Chinese and English status formats
         status_patterns = [
-            r'\[(PASS|FAIL)\]'  # Match only PASS or FAIL in square brackets
+            r'\[\s*(PASS|FAIL)\s*\]'  # Match PASS or FAIL in square brackets with optional whitespace
         ]
 
         for pattern in status_patterns:
             match = re.search(pattern, response.text, re.IGNORECASE)
             if match:
+                print(f"Match found: {match.group(0)}")
                 check_status = match.group(1).upper()
                 break
     print(f"check status: {check_status}")

@@ -1,7 +1,7 @@
 name: Issue 自动回复
 on:
   issues:
-    types: [opened, labeled]  # 仅监听 Issue 新建事件
+    types: [opened]  # 仅监听 Issue 新建事件
 
 permissions:
   issues: write

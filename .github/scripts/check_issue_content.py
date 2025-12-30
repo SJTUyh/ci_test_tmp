@@ -146,13 +146,10 @@ Please respond in {language} and ensure your response is clear and helpful.
 
 # Call Gemini API
 try:
-    # Get the model client for Gemini API
-    model_client = genai.get_model('models/gemini-2.5-flash')
-
     # Generate content using the model
     response = genai.generate_content(
-        model='models/gemini-1.5-flash',
         contents=prompt,
+        model='models/gemini-1.5-flash',
         generation_config={
             'temperature': 0.3,
             'top_p': 1.0,

@@ -1,11 +1,3 @@
-<!--
- * @Author: yanhe13 yanhe13@huawei.com
- * @Date: 2025-12-29 14:21:41
- * @LastEditors: yanhe13 yanhe13@huawei.com
- * @LastEditTime: 2026-01-12 16:37:34
- * @FilePath: \ci_test\.github\pull_request_template.md
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
--->
 Thanks for your contribution; we appreciate it a lot. The following instructions will make your pull request healthier and help you get feedback more easily. If you do not understand some items, don't worry, just make the pull request and seek help from maintainers.
 感谢您的贡献，我们非常重视。以下说明将使您的拉取请求更健康，更易于获得反馈。如果您不理解某些项目，请不要担心，只需提交拉取请求并从维护人员那里寻求帮助即可。
 

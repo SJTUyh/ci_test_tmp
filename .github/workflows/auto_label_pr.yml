@@ -25,6 +25,16 @@ jobs:
 
             console.log(`Processing PR #${prNumber}`);
 
+            // 如果是 edited 事件，检查是否是描述修改
+            if (context.eventName === 'pull_request_target' && context.payload.action === 'edited') {
+              const changes = context.payload.changes;
+              if (!changes || !changes.body) {
+                console.log('PR edited but description not changed, skipping');
+                return;
+              }
+              console.log('PR description was modified');
+            }
+
             // 定义PR类型到标签的映射
             const typeToLabel = {
               'Feature（功能新增）': 'feature',

@@ -1,12 +1,13 @@
 name: Auto Label PR
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, edited]
 
 permissions:
   pull-requests: write
   issues: write
+  contents: read
 
 jobs:
   auto-label:
@@ -65,17 +66,12 @@ jobs:
               return;
             }
 
-            // 合并现有标签和新标签
-            const allLabels = [...currentLabels, ...labelsToAdd];
-            console.log(`Adding labels: ${labelsToAdd.join(', ')}`);
-            console.log(`Final labels: ${allLabels.join(', ')}`);
-
-            // 更新PR标签
-            await github.rest.issues.setLabels({
+            // 添加新标签到PR
+            await github.rest.issues.addLabels({
               owner: owner,
               repo: repo,
               issue_number: prNumber,
-              labels: allLabels
+              labels: labelsToAdd
             });
 
             console.log(`Successfully labeled PR #${prNumber} with: ${labelsToAdd.join(', ')}`);

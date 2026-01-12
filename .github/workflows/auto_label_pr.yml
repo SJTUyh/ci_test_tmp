@@ -1,0 +1,80 @@
+name: Auto Label PR
+
+on:
+  pull_request:
+    types: [opened, edited]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  auto-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto label PR based on PR type
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const prBody = pr.body || '';
+            const prNumber = pr.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            console.log(`Processing PR #${prNumber}`);
+
+            // 定义PR类型到标签的映射
+            const typeToLabel = {
+              'Feature（功能新增）': 'feature',
+              'Bugfix（Bug 修复）': 'bugfix',
+              'Docs（文档更新）': 'docs',
+              'CI/CD（流水线工程）': 'ci/cd',
+              'Refactor（代码重构）': 'refactor',
+              'Perf（性能优化）': 'perf',
+              'Dependency（依赖更新）': 'dependency',
+              'Test-Cases（测试用例更新）': 'test-cases',
+              'Other（其他）': 'other'
+            };
+
+            // 获取当前PR的所有标签
+            const currentLabels = pr.labels.map(label => label.name);
+            console.log(`Current labels: ${currentLabels.join(', ')}`);
+
+            // 解析PR描述，找到勾选的PR类型
+            const selectedTypes = [];
+            for (const [type, label] of Object.entries(typeToLabel)) {
+              if (prBody.includes(`- [x] ${type}`)) {
+                selectedTypes.push(label);
+                console.log(`Found selected type: ${type} -> ${label}`);
+              }
+            }
+
+            // 如果没有勾选任何类型，跳过
+            if (selectedTypes.length === 0) {
+              console.log('No PR type selected, skipping');
+              return;
+            }
+
+            // 计算需要添加的标签（排除已存在的）
+            const labelsToAdd = selectedTypes.filter(label => !currentLabels.includes(label));
+
+            // 如果没有新标签需要添加，跳过
+            if (labelsToAdd.length === 0) {
+              console.log('All selected labels already exist, skipping');
+              return;
+            }
+
+            // 合并现有标签和新标签
+            const allLabels = [...currentLabels, ...labelsToAdd];
+            console.log(`Adding labels: ${labelsToAdd.join(', ')}`);
+            console.log(`Final labels: ${allLabels.join(', ')}`);
+
+            // 更新PR标签
+            await github.rest.issues.setLabels({
+              owner: owner,
+              repo: repo,
+              issue_number: prNumber,
+              labels: allLabels
+            });
+
+            console.log(`Successfully labeled PR #${prNumber} with: ${labelsToAdd.join(', ')}`);
